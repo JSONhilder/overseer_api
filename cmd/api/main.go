@@ -1,19 +1,31 @@
 package main
 
 import (
-	"fmt"
 	"log"
+
+	"github.com/JSONhilder/overseer_api/internal/application"
 
 	// import my directories
 	router "github.com/JSONhilder/overseer_api/cmd/api/routes"
-	"github.com/JSONhilder/overseer_api/internal/db"
+	"github.com/joho/godotenv"
 )
 
+/*
+	load env file -> create application instance -> pass application instance to server
+*/
 func main() {
-	fmt.Println("Main go file.")
+	// load env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
-	db.ConnectDB()
+	// Has instance of db and config in "app"
+	app, err := application.Get()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-	log.Println("API running on port http:/localhost:8080")
-	router.StartRouter()
+	app.LOG.Info("API running on port http:/localhost:8080")
+	router.StartRouter(app)
 }
