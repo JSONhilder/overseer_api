@@ -12,6 +12,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
+/*
+	@TODO
+	- Create dynamic path for setupTables LOC: 67
+*/
+
 // DB - DB struct to hold instance of db to pass around app
 type DB struct {
 	Client *sql.DB
