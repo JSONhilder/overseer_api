@@ -7,6 +7,7 @@ import (
 
 	// Apllication dependancy
 	"github.com/JSONhilder/overseer_api/internal/application"
+	"github.com/JSONhilder/overseer_api/internal/middleware/authjwt"
 
 	// Handlers
 	"github.com/JSONhilder/overseer_api/cmd/api/handlers/projects"
@@ -18,12 +19,16 @@ import (
 
 // StartRouter - initials the routers with their respective handlers
 func StartRouter(app *application.Application) {
-	myRouter := mux.NewRouter().StrictSlash(true)
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/", server.Check(app))
 
-	myRouter.HandleFunc("/", server.Check(app))
-	myRouter.HandleFunc("/api/projects", projects.CreateProject(app)).Methods("POST")
-	myRouter.HandleFunc("/api/projects/{id}", projects.GetProject(app)).Methods("GET")
-	myRouter.HandleFunc("/api/projects", projects.GetProjects(app))
+	authRoutes := router.PathPrefix("/api").Subrouter()
+	authRoutes.Use(authjwt.Verify)
+	authRoutes.HandleFunc("/projects", projects.CreateProject(app)).Methods("POST")
+	authRoutes.HandleFunc("/projects/{id}", projects.GetProject(app)).Methods("GET")
+	authRoutes.HandleFunc("/projects/{id}", projects.UpdateProject(app)).Methods("PUT")
+	authRoutes.HandleFunc("/projects/{id}", projects.DeleteProject(app)).Methods("DELETE")
+	authRoutes.HandleFunc("/projects", projects.GetProjects(app))
 
-	log.Fatal(http.ListenAndServe(os.Getenv("SERVER_PORT"), myRouter))
+	log.Fatal(http.ListenAndServe(os.Getenv("SERVER_PORT"), router))
 }
