@@ -8,9 +8,9 @@ import (
 
 // Application - struct with pointers to db instance and config object
 type Application struct {
-	DB  *db.DB
-	CFG *config.Config
-	LOG *zap.SugaredLogger
+	Db     *db.DB
+	Conf   *config.Config
+	Logger *zap.SugaredLogger
 }
 
 // Get - Return an application state with access to db, config and logger for dependancy injection
@@ -29,8 +29,8 @@ func Get() (*Application, error) {
 	log.Info("Database successfully connected.")
 
 	return &Application{
-		DB:  db,
-		CFG: cfg,
-		LOG: log,
+		Db:     db,
+		Conf:   cfg,
+		Logger: log,
 	}, nil
 }

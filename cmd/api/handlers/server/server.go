@@ -11,6 +11,6 @@ import (
 func Check(app *application.Application) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "status: up")
-		app.LOG.Info("Check endpoint hit: /")
+		app.Logger.Info("Check endpoint hit: /")
 	}
 }

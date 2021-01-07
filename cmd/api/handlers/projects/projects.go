@@ -13,7 +13,6 @@ import (
 
 /*
 	@TODO
-	- Possibly create middleware to set headers
 	- Add uid to query filters
 	- Possibly get rid of *client* in db.Client.Query
 	- Set serverRes to a boolean value
@@ -36,12 +35,11 @@ type serverRes struct {
 // GetProjects - List all users projects
 func GetProjects(app *application.Application) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		app.LOG.Info("GetAll endpoint hit: /api/projects")
+		app.Logger.Info("GetAll endpoint hit: /api/projects")
 
 		var projects []Project
 		sqlQuery := `SELECT * FROM projects;`
-		rows, err := app.DB.Client.Query(sqlQuery)
+		rows, err := app.Db.Client.Query(sqlQuery)
 
 		defer rows.Close()
 		for rows.Next() {
@@ -62,15 +60,14 @@ func GetProjects(app *application.Application) func(w http.ResponseWriter, r *ht
 // GetProject - get single project with id param
 func GetProject(app *application.Application) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		app.LOG.Info("GetProject endpoint hit: /api/projects/:id")
+		app.Logger.Info("GetProject endpoint hit: /api/projects/:id")
 
 		// Get all variable/parameters passed returns a map
 		vars := mux.Vars(r)
 		key := vars["id"]
 
 		sqlQuery := `SELECT * FROM projects WHERE id=$1`
-		row, err := app.DB.Client.Query(sqlQuery, key)
+		row, err := app.Db.Client.Query(sqlQuery, key)
 		if err != nil {
 			utils.JSONError(w, err.Error(), 400)
 		}
@@ -91,8 +88,7 @@ func GetProject(app *application.Application) func(w http.ResponseWriter, r *htt
 // CreateProject - Create new project
 func CreateProject(app *application.Application) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		app.LOG.Info("CreateProject endpoint hit: /api/projects")
-		w.Header().Set("Content-Type", "application/json")
+		app.Logger.Info("CreateProject endpoint hit: /api/projects")
 
 		var id int
 		var p Project
@@ -108,7 +104,7 @@ func CreateProject(app *application.Application) func(w http.ResponseWriter, r *
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id`
 
-		err = app.DB.Client.QueryRow(sqlQuery, p.UID, p.ProjectName, p.ProjectDesc, p.ProjectTime, p.ProjectCompleted).Scan(&id)
+		err = app.Db.Client.QueryRow(sqlQuery, p.UID, p.ProjectName, p.ProjectDesc, p.ProjectTime, p.ProjectCompleted).Scan(&id)
 		if err != nil {
 			utils.JSONError(w, err.Error(), 400)
 		} else {
@@ -122,15 +118,14 @@ func CreateProject(app *application.Application) func(w http.ResponseWriter, r *
 // DeleteProject - Delete project with passed Id param
 func DeleteProject(app *application.Application) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		app.LOG.Info("DeleteProject endpoint hit: /api/projects/:id")
-		w.Header().Set("Content-Type", "application/json")
+		app.Logger.Info("DeleteProject endpoint hit: /api/projects/:id")
 
 		// Get all variable/parameters passed returns a map
 		vars := mux.Vars(r)
 		key := vars["id"]
 
 		sqlQuery := `DELETE FROM projects WHERE id=$1`
-		_, err := app.DB.Client.Query(sqlQuery, key)
+		_, err := app.Db.Client.Query(sqlQuery, key)
 		if err != nil {
 			utils.JSONError(w, err.Error(), 400)
 			return
@@ -145,8 +140,7 @@ func DeleteProject(app *application.Application) func(w http.ResponseWriter, r *
 // UpdateProject - Update project with passed Id param
 func UpdateProject(app *application.Application) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		app.LOG.Info("UpdateProject endpoint hit: /api/projects/:id")
-		w.Header().Set("Content-Type", "application/json")
+		app.Logger.Info("UpdateProject endpoint hit: /api/projects/:id")
 
 		var p Project
 		// Get all variable/parameters passed returns a map
@@ -164,7 +158,7 @@ func UpdateProject(app *application.Application) func(w http.ResponseWriter, r *
 		SET u_id = $1, project_name = $2, project_desc = $3, project_time = $4, project_completed = $5
 		WHERE id = $6`
 
-		_, err = app.DB.Client.Query(sqlQuery, p.UID, p.ProjectName, p.ProjectDesc, p.ProjectTime, p.ProjectCompleted, key)
+		_, err = app.Db.Client.Query(sqlQuery, p.UID, p.ProjectName, p.ProjectDesc, p.ProjectTime, p.ProjectCompleted, key)
 		if err != nil {
 			utils.JSONError(w, err.Error(), 400)
 		} else {

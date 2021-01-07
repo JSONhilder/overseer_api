@@ -22,15 +22,17 @@ import (
 func StartRouter(app *application.Application) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", server.Check(app))
-
 	authRoutes := router.PathPrefix("/api").Subrouter()
+
+	// Middleware
 	authRoutes.Use(middleware.VerifyJwt)
+	// Projects
 	authRoutes.HandleFunc("/projects", projects.CreateProject(app)).Methods("POST")
 	authRoutes.HandleFunc("/projects/{id}", projects.UpdateProject(app)).Methods("PUT")
 	authRoutes.HandleFunc("/projects/{id}", projects.DeleteProject(app)).Methods("DELETE")
 	authRoutes.HandleFunc("/projects/{id}", projects.GetProject(app))
 	authRoutes.HandleFunc("/projects", projects.GetProjects(app))
-
+	// Tasks
 	authRoutes.HandleFunc("/tasks", tasks.CreateTask(app)).Methods("POST")
 	authRoutes.HandleFunc("/tasks/{id}", tasks.DeleteTask(app)).Methods("DELETE")
 	authRoutes.HandleFunc("/tasks/{id}", tasks.UpdateTask(app)).Methods("PUT")

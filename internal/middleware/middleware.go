@@ -2,32 +2,23 @@ package middleware
 
 import (
 	"context"
-	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/JSONhilder/overseer_api/internal/utils"
 
 	firebase "firebase.google.com/go"
 	"google.golang.org/api/option"
 )
 
-type httpError struct {
-	Response string `json:"response"`
-}
-
-/*
-	@TODO
-	- move firebase server app into application interface
-	- Add function to set json headers
-*/
-
 // VerifyJwt - Middleware function to verify firebase jwt
 func VerifyJwt(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
 
-		// Remove in production
+		// @TODO - Remove in production
 		if r.Header.Get("Authorization") == "DEV" {
+			w.Header().Set("Content-Type", "application/json")
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -40,28 +31,29 @@ func VerifyJwt(next http.Handler) http.Handler {
 
 			app, err := firebase.NewApp(ctx, nil, opt)
 			if err != nil {
-				log.Fatalf("error initializing app: %v\n", err)
+				str := fmt.Sprint("error initializing app: %v\n", err)
+				utils.JSONError(w, str, 500)
 			}
 
 			client, err := app.Auth(ctx)
 			if err != nil {
-				log.Fatalf("error getting Auth client: %v\n", err)
+				str := fmt.Sprint("error getting Auth client: %v\n", err)
+				utils.JSONError(w, str, 500)
 			}
 
 			token, err := client.VerifyIDToken(ctx, jwt)
 			if err != nil {
-				w.WriteHeader(401)
-				jsonErr := httpError{Response: "Unauthorized, Invalid JWT"}
-				json.NewEncoder(w).Encode(jsonErr)
+				utils.JSONError(w, "Unauthorized, Invalid JWT", 401)
 			}
 
 			if token != nil {
+				// Set content header to json
+				w.Header().Set("Content-Type", "application/json")
 				// Call the next handler, which can be another middleware in the chain, or the final handler.
 				next.ServeHTTP(w, r)
 			}
 		} else {
-			jsonErr := httpError{Response: "Authorization Header does not exist"}
-			json.NewEncoder(w).Encode(jsonErr)
+			utils.JSONError(w, "Authorization Header does not exist", 404)
 		}
 	})
 }

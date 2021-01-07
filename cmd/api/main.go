@@ -12,6 +12,7 @@ import (
 
 /*
 	load env file -> create application instance -> pass application instance to server
+	@TODO
 */
 func main() {
 	// load env file
@@ -26,6 +27,6 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	app.LOG.Info("API running on port http:/localhost:8080")
+	app.Logger.Info("API running on port http:/localhost:8080")
 	router.StartRouter(app)
 }
