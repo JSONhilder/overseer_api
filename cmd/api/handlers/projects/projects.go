@@ -7,18 +7,15 @@ import (
 	"net/http"
 
 	"github.com/JSONhilder/overseer_api/internal/application"
+	"github.com/JSONhilder/overseer_api/internal/utils"
 	"github.com/gorilla/mux"
 )
 
 /*
 	@TODO
-	- Possibly move json error function to its own package, utils?
 	- Possibly create middleware to set headers
-	- Verify jwt from user using firebase admin
 	- Add uid to query filters
 	- Possibly get rid of *client* in db.Client.Query
-	- Remove "code" from httpError
-	- Test http.Error
 	- Set serverRes to a boolean value
 */
 
@@ -32,21 +29,8 @@ type Project struct {
 	ProjectTime      string `json: "project_time"`
 }
 
-type httpError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 type serverRes struct {
 	Res string `json: res`
-}
-
-func jsonError(w http.ResponseWriter, err string, code int) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(code)
-	jsonErr := httpError{Code: code, Message: err}
-	json.NewEncoder(w).Encode(jsonErr)
 }
 
 // GetProjects - List all users projects
@@ -65,7 +49,7 @@ func GetProjects(app *application.Application) func(w http.ResponseWriter, r *ht
 
 			err = rows.Scan(&p.ID, &p.UID, &p.ProjectName, &p.ProjectDesc, &p.ProjectTime, &p.ProjectCompleted)
 			if err != nil {
-				jsonError(w, err.Error(), 400)
+				utils.JSONError(w, err.Error(), 400)
 			}
 
 			projects = append(projects, p)
@@ -88,7 +72,7 @@ func GetProject(app *application.Application) func(w http.ResponseWriter, r *htt
 		sqlQuery := `SELECT * FROM projects WHERE id=$1`
 		row, err := app.DB.Client.Query(sqlQuery, key)
 		if err != nil {
-			jsonError(w, err.Error(), 400)
+			utils.JSONError(w, err.Error(), 400)
 		}
 
 		var p Project
@@ -96,7 +80,7 @@ func GetProject(app *application.Application) func(w http.ResponseWriter, r *htt
 		for row.Next() {
 			err = row.Scan(&p.ID, &p.UID, &p.ProjectName, &p.ProjectDesc, &p.ProjectTime, &p.ProjectCompleted)
 			if err != nil {
-				jsonError(w, err.Error(), 400)
+				utils.JSONError(w, err.Error(), 400)
 			}
 		}
 
@@ -114,7 +98,7 @@ func CreateProject(app *application.Application) func(w http.ResponseWriter, r *
 		var p Project
 		err := json.NewDecoder(r.Body).Decode(&p)
 		if err != nil {
-			jsonError(w, "Bad Request", 400)
+			utils.JSONError(w, "Bad Request", 400)
 			return
 		}
 		defer r.Body.Close()
@@ -126,7 +110,7 @@ func CreateProject(app *application.Application) func(w http.ResponseWriter, r *
 
 		err = app.DB.Client.QueryRow(sqlQuery, p.UID, p.ProjectName, p.ProjectDesc, p.ProjectTime, p.ProjectCompleted).Scan(&id)
 		if err != nil {
-			jsonError(w, err.Error(), 400)
+			utils.JSONError(w, err.Error(), 400)
 		} else {
 			str := fmt.Sprintf("Successfully created project: %v", id)
 			res := serverRes{Res: str}
@@ -148,7 +132,7 @@ func DeleteProject(app *application.Application) func(w http.ResponseWriter, r *
 		sqlQuery := `DELETE FROM projects WHERE id=$1`
 		_, err := app.DB.Client.Query(sqlQuery, key)
 		if err != nil {
-			jsonError(w, err.Error(), 400)
+			utils.JSONError(w, err.Error(), 400)
 			return
 		}
 
@@ -171,7 +155,7 @@ func UpdateProject(app *application.Application) func(w http.ResponseWriter, r *
 
 		err := json.NewDecoder(r.Body).Decode(&p)
 		if err != nil {
-			jsonError(w, "Bad Request", 400)
+			utils.JSONError(w, "Bad Request", 400)
 			return
 		}
 		defer r.Body.Close()
@@ -182,7 +166,7 @@ func UpdateProject(app *application.Application) func(w http.ResponseWriter, r *
 
 		_, err = app.DB.Client.Query(sqlQuery, p.UID, p.ProjectName, p.ProjectDesc, p.ProjectTime, p.ProjectCompleted, key)
 		if err != nil {
-			jsonError(w, err.Error(), 400)
+			utils.JSONError(w, err.Error(), 400)
 		} else {
 			str := fmt.Sprintf("Successfully updated project: %v", key)
 			res := serverRes{Res: str}
