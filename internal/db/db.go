@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 
 	"github.com/JSONhilder/overseer_api/internal/config"
@@ -48,7 +49,7 @@ func initDB(cfg *config.Config) (*sql.DB, error) {
 
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		log.Fatal("Failed to ping database, please make sure database is running.")
 	}
 
 	setupTables(db)
@@ -64,9 +65,9 @@ func (d *DB) Close() error {
 // Setup tables
 func setupTables(db *sql.DB) {
 
-	query, err := ioutil.ReadFile("/home/jason/dev/github/overseer_api/internal/db/setup_db.sql")
+	query, err := ioutil.ReadFile("./internal/db/setup_db.sql")
 	if err != nil {
-		panic(err)
+		log.Fatal(err.Error())
 	}
 
 	requests := strings.Split(string(query), ";")
@@ -75,7 +76,7 @@ func setupTables(db *sql.DB) {
 		_, err := db.Exec(request)
 
 		if err != nil {
-			panic(err)
+			log.Fatal(err.Error())
 		}
 	}
 }
